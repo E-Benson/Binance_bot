@@ -14,11 +14,6 @@ INTERVAL_1D = "1d"
 data_buffer = Buffer(save_data=True)
 
 
-def create_candle(candle):
-    global candle_labels
-    return dict(zip(candle_labels, candle.values()))
-
-
 def main():
     symbol = "ETHUSDT"
     sock = ThreadedWebsocketManager(api_key, api_secret, tld="us")
@@ -28,7 +23,6 @@ def main():
         data_buffer.recv_candle(msg["k"])
         print(data_buffer)
         #print(data_buffer.get_dataset(msg["k"]["i"]))
-
 
     sock.start_kline_socket(callback=on_message, symbol=symbol, interval=INTERVAL_1M)
     sock.start_kline_socket(callback=on_message, symbol=symbol, interval=INTERVAL_5M)
