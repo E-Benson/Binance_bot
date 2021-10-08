@@ -139,3 +139,6 @@ trades/
 
 # idk but I don't want it
 .idea/
+
+# github folder
+.github/
