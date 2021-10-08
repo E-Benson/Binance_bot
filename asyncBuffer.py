@@ -1,5 +1,5 @@
 import pandas as pd
-
+import os
 
 class Buffer:
 
@@ -9,12 +9,17 @@ class Buffer:
         self.size = 200
         self.csv_format = "csvs/{}_{}_candles.csv"
         self.working_candle = dict()
+        self.init_directories()
 
     def __repr__(self):
         s = "Buffer => "
         for dataset in self.datasets:
             s += f"{dataset} - (size={len(self.datasets[dataset])})\t"
         return s
+
+    def init_directories(self):
+        if not os.path.exists("/csvs"):
+            os.mkdir("csvs")
 
     def recv_candle(self, candle):
         interval = candle["i"]
