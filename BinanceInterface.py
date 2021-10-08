@@ -1,6 +1,7 @@
 from binance.client import Client
 from binance.enums import *
 import pandas as pd
+from pandas import DataFrame
 import time
 from pprint import pprint
 
@@ -16,7 +17,7 @@ candle_labels = ["open_time", "open", "close", "high", "low",
                      "taker_base_vol", "taker_quote_vol", "x"]
 #pprint(depth)
 
-def get_historical_data(symbol, candle_size="1m", time_frame="1 day"):
+def get_historical_data(symbol: str, candle_size="1m", time_frame="1 day") -> DataFrame:
 
     data = []
     for candle in client.get_historical_klines_generator(symbol, candle_size, f"{time_frame} ago UTC"):
@@ -30,7 +31,7 @@ def get_historical_data(symbol, candle_size="1m", time_frame="1 day"):
     return pd.DataFrame(data, columns=candle_labels)
 
 
-def place_order(symbol, quantity, price, timeInForce="IOC", test=True):
+def place_order(symbol: str, quantity: float, price: float, timeInForce="IOC", test=True) -> dict:
     args = {
         "symbol": symbol,
         "side": "BUY",
@@ -54,7 +55,7 @@ def place_order(symbol, quantity, price, timeInForce="IOC", test=True):
         pass
 
 
-def place_sell_order(symbol, quantity, price):
+def place_sell_order(symbol: str, quantity: float, price: float) -> bool:
     if round(quantity, 5) > quantity:
         quantity = (quantity * 100000) // 1 / 100000
     else:
@@ -69,7 +70,7 @@ def place_sell_order(symbol, quantity, price):
     return order["status"] != "EXPIRED"
 
 
-def place_buy_order(symbol, quantity, price):
+def place_buy_order(symbol: str, quantity: float, price: float) -> bool:
     if round(quantity, 5) > quantity:
         quantity = quantity = (quantity * 100000) // 1 / 100000
     else:
@@ -85,7 +86,7 @@ def place_buy_order(symbol, quantity, price):
     return order["status"] != "EXPIRED"
 
 
-def get_bidask(symbol):
+def get_bidask(symbol: str) -> tuple:
     res = client.get_order_book(symbol=symbol.upper())
     bid = {
         "price": round(float(res["bids"][0][0]), 2),
@@ -98,12 +99,12 @@ def get_bidask(symbol):
     return bid, ask
 
 
-def get_asset_balance(symbol):
+def get_asset_balance(symbol: str) -> float:
     res = client.get_asset_balance(asset=symbol.upper())
     return float(res["free"])
 
 
-def get_asset_price(symbol):
+def get_asset_price(symbol: str) -> float:
     prices = client.get_all_tickers()
     for token in prices:
         if token["symbol"] == symbol.upper():
@@ -111,23 +112,16 @@ def get_asset_price(symbol):
     return -1
 
 
-def get_avg_price(symbol):
+def get_avg_price(symbol: str) -> float:
     ask, bid = get_bidask(symbol.upper())
     return (ask["price"] + bid["price"]) / 2
 
 
-def get_open_orders(symbol):
+def get_open_orders(symbol: str) -> float:
     return client.get_open_orders(symbol=symbol.upper())
 
 
-def check_order_status(symbol, orderId):
-    orders = client.get_all_orders(symbol=symbol.upper())
-    for order in orderId:
-        if order["orderId"] == orderId:
-            return order["status"]
-    return "Filled?"
-
-def cancel_order(symbol, order_id):
+def cancel_order(symbol: str, order_id: str) -> dict:
     res = client.cancel_order(
         symbol=symbol.upper(),
         origClientOrderId=order_id
@@ -163,8 +157,8 @@ if __name__ == "__main__":
     #print(order)
 
     token = "eth"
-    symbol = f"{token}usdt"
-    ords = get_open_orders(symbol.upper())
+    sym = f"{token}usdt"
+    ords = get_open_orders(sym.upper())
     print(ords)
 
     #for ord in ords:
