@@ -142,3 +142,6 @@ trades/
 
 # github folder
 .github/
+
+# Credentials file
+Creds.py
