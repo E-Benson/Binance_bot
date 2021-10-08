@@ -1,9 +1,10 @@
 from binance import ThreadedWebsocketManager
 from asyncBuffer import Buffer
+from Creds import credentials
 
 
-api_key = "ljQ8hdKoko74G3jmKcRZvK9OmDC07BNpcbelSIZNGKWx2z4pC80yTWlf9syCsxCt"
-api_secret = "QVO9tcdKwPOOgh2CMkMRMNADdh5vWl8ctYP1xyKwhvu73eqauWuROgBzYUW9R2y7"
+api_key = credentials["api_key"]
+api_secret = credentials["api_secret"]
 
 INTERVAL_1M = "1m"
 INTERVAL_5M = "5m"
