@@ -11,6 +11,8 @@ from Strategy import EMATrader, MACDTrader
 
 style.use("ggplot")
 
+chart_size = 200
+
 func = lambda x: datetime.datetime.utcfromtimestamp(x // 1000)
 data_csv_path1 = "csvs/ETHUSDT_1m_candles.csv"
 data_csv_path2 = "csvs/ETHUSDT_5m_candles.csv"
@@ -126,11 +128,15 @@ def plot_trades(axis, df):
             axis.plot(sd, sp, "kv", label=sp, markersize=4, zorder=6)
 
 
+def get_data(fname):
+    df = pd.read_csv(fname)
+    df.at["t"] = df["t"].apply(form_time)
+    return df[-chart_size:].dropna()
+
+
 def update(_):
-    df_1m = pd.read_csv(data_csv_path1)
-    df_1m["t"] = df_1m["t"].apply(form_time)
-    df_5m = pd.read_csv(data_csv_path2)
-    df_5m["t"] = df_5m["t"].apply(form_time)
+    df_1m = get_data(data_csv_path1)
+    df_5m = get_data(data_csv_path2)
 
     ax.clear()
     ax2.clear()
