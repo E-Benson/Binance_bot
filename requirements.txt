@@ -2,3 +2,4 @@ websocket_client
 pandas
 ta
 python-binance
+matplotlib
