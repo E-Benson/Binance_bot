@@ -145,3 +145,6 @@ trades/
 
 # Credentials file
 Creds.py
+
+# Ignore extraneous profiling files
+*.prof
