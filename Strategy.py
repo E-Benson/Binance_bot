@@ -53,9 +53,14 @@ class Position:
         return self.quantity * self.sell_price
 
     def profit(self):
-        gain = (self.quantity * self.sell_price) - (self.quantity * self.buy_price)
-        fee = 0.001
-        return gain - (gain * fee)
+        print(f"q: {self.quantity}, b: {self.buy_price}, s:{self.sell_price}")
+        if self.quantity is not None and self.buy_price is not None and self.sell_price is not None:
+            gain = (self.quantity * self.sell_price) - (self.quantity * self.buy_price)
+            fee = 0.001
+            return gain - (gain * fee)
+        if self.quantity == 0:
+            return 0
+        return 0
 
     def is_empty(self):
         if not self.buy_price:
@@ -87,6 +92,15 @@ class Position:
 
     def set_selltime(self, _time):
         self.sell_time = _time
+
+    def to_array(self):
+        q = 0 if not self.quantity else self.quantity
+        b = 0 if not self.buy_price else self.buy_price
+        s = 0 if not self.sell_price else self.sell_price
+        bt = 0 if not self.buy_time else self.buy_time
+        st = 0 if not self.sell_time else self.sell_time
+        p = 0 if self.quantity is None else self.profit()
+        return [q, b, s, bt, st, round(p, 2)]
 
 
 class Strategy:

@@ -5,8 +5,8 @@ from pandas import DataFrame, Series
 
 class Buffer:
 
-    def __init__(self, save_data=True) -> None:
-        self.datasets = dict()
+    def __init__(self, init_data=None, save_data=True) -> None:
+        self.datasets = init_data if init_data is not None else dict()
         self.save_data = save_data
         self.size = 200
         self.csv_format = "csvs/{}_{}_candles.csv"
@@ -34,7 +34,6 @@ class Buffer:
     #
     def recv_candle(self, candle: dict) -> None:
         interval = candle["i"]
-        print(f"Received {interval} candle")
         # Check if this is a closing candle
         if candle["x"]:
             try:
@@ -75,7 +74,7 @@ class Buffer:
         except KeyError:
             try:
                 # There is no current data for this interval
-                return DataFrame(self.working_candle[interval], index=self.working_candle[interval].index)
+                return DataFrame([self.working_candle[interval]])
             except KeyError:
                 # There is no current data or working candle for this interval
                 return DataFrame()
