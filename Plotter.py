@@ -9,9 +9,11 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 from Strategy import EMATrader
 from StateStrategy import ADXStateTrader
+from Indicators import SuperTrend
+import BinanceInterface as bi
 
-symbol = "SHIB"
-plt.style.use('dark_background')
+symbol = "ETH"
+plt.style.use('ggplot')
 chart_size = 200
 
 data_csv_path1 = f"csvs/{symbol}USDT_1m_candles.csv"
@@ -76,6 +78,7 @@ def plot_ema(axis, df, window=9, color="#2b74c2"):
 def get_trades(oldest):
     df = pd.read_csv(f"csvs/{symbol}_trades.csv")
     df["bt"] = df["bt"].apply(form_time)
+    #print(df)
     return df[df["bt"] >= oldest]
 
 
@@ -91,6 +94,43 @@ def plot_trades(axis, df):
             axis.plot([bd, sd], [bp, sp], color=clr, linewidth=3, zorder=3)
             axis.plot(bd, bp, "k^", label=sp-bp, markersize=4, zorder=5)
             axis.plot(sd, sp, "kv", label=sp, markersize=4, zorder=6)
+
+
+def plot_super_trend(axis, df, period=5, multiplier=3):
+    st = SuperTrend(init_data=df, period=period, multiplier=multiplier)
+    data = st.data
+    axis.plot(data["t"], data["fuband"], color="c", alpha=0.1, zorder=3)
+    #axis.plot(data["t"], data["uband"], color="b", alpha=0.5)
+    axis.plot(data["t"], data["flband"], color="c", alpha=0.1, zorder=3)
+    #axis.plot(data["t"], data["lband"], color="w", alpha=0.1, zorder=3)
+    #print(data)
+    p_clr = "r"
+    position_value = 0
+    position_date = None
+    for i in range(len(data[period:])):
+        clr = "g" if data.iloc[i]["c"] > data.iloc[i]["supertrend"] else "r"
+        # Add buy-in and sell-out markers
+        if clr != p_clr:
+            marker = "^" if clr == "g" else "v"
+            diff = data.iloc[i]["flband"] - data.iloc[i]["c"] if clr == "g" else data.iloc[i]["fuband"] - data.iloc[i]["c"]
+            axis.plot(data.iloc[i]["t"], data.iloc[i]["c"], marker=marker, color=clr, markersize=5)
+            axis.plot(data.iloc[i]["t"], data.iloc[i]["c"] + (diff / 2), marker=marker, color=clr, markersize=5)
+            axis.plot(data.iloc[i]["t"], data.iloc[i]["supertrend"], marker=marker, color=clr, markersize=5)
+            # highlight background for each position
+            if clr == "r":
+                shade = "r" if position_value > data.iloc[i]["c"] else "g"
+                axis.axvspan(position_date, data.iloc[i]["t"], facecolor=shade, alpha=0.1)
+            position_value = data.iloc[i]["c"]
+            position_date = data.iloc[i]["t"]
+        # Add a line tracking the buy-in price
+        if clr == "g":
+            axis.plot(data.iloc[i]["t"], position_value, marker="o", color="c", alpha=0.2, markersize=2)
+        # Plot supertrend line
+        axis.plot([df.iloc[i]["t"], df.iloc[i+1]["t"]],
+                  [data.iloc[i]["supertrend"], data.iloc[i+1]["supertrend"]],
+                  color=clr, alpha=0.4, zorder=4)
+        p_clr = clr
+
 
 
 def func(num_data):
@@ -120,6 +160,7 @@ def animate(_):
         df_5m = get_data(data_csv_path2)
         dfs = [df_1m, df_5m]
         trades = get_trades(df_1m["t"].iloc[0])
+        #print(trades)
     except EmptyDataError:
         print("File currently being written to...")
         return
@@ -132,16 +173,31 @@ def animate(_):
         m_ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('$%.7f'))
 
         plot_candles(m_ax, df)
-        plot_ema(m_ax, df)
-        plot_trades(m_ax, trades)
+        plot_super_trend(m_ax, df, period=3)
+        #plot_ema(m_ax, df)
+        #plot_trades(m_ax, trades)
 
         plot_adx(s_ax, df)
 
 
-fig, axes = func(2)
-animate(1)
-a = ani.FuncAnimation(fig, animate, interval=1000000)
+if __name__ == "__main__":
+    from_disk = False
+    if from_disk:
+        fig, axes = func(2)
 
-plt.show()
+        animate(1)
+        a = ani.FuncAnimation(fig, animate, interval=10000)
+        plt.show()
+    else:
+        df = bi.get_historical_data("SHIBUSDT", candle_size="1m", time_frame="6 hour")
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        plot_candles(ax, df)
+        plot_super_trend(ax, df, period=10, multiplier=3)
+        plt.show()
+
+
+
+
 
 

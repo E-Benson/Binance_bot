@@ -85,34 +85,6 @@ class ADX:
 
         self.data["adx"] = s_df["adx"]
 
-        """
-        dx = np.abs(np.divide(diffs, sums) * 100)
-        tdf = DataFrame(dx)
-        tdf.at[window - 1] = np.mean(dx[self.period: window])
-        adx = tdf[window:].rolling(2, min_periods=2).apply(lambda a: a[a.index.start] * 13 + a[a.index.start + 1])
-
-
-
-        fill = np.zeros((size - adx.shape[0]))
-        self.data["adx"] = np.nan_to_num(np.divide(np.append(fill, adx.to_numpy()), 14))
-        
-        dms = self.data[["pdma", "ndma"]].to_numpy()
-        diffs = np.diff(dms, axis=1).reshape((size, ))
-        #print(diffs)
-        sums = np.sum(dms, axis=1).reshape((size, ))
-        #print(self.data["atr"].to_numpy().reshape(size, ))
-        #print(dms)
-        #print(sums)
-        #print(np.nan_to_num(sums, nan=1))
-        np.divide(diffs[3:], sums[3:]) * 100
-        dx = np.abs(np.divide(diffs, sums) * 100)
-        tdf = DataFrame(dx)
-        tdf.at[window-1] = np.mean(dx[self.period : window])
-        adx = tdf[window:].rolling(2, min_periods=2).apply(lambda a: a[a.index.start] * 13 + a[a.index.start + 1])
-        fill = np.zeros((size - adx.shape[0]))
-        self.data["adx"] = np.nan_to_num(np.divide(np.append(fill, adx.to_numpy()), 14))
-        """
-
     def _adx_pos(self):
         size = len(self.data)
         # Make an array of pairs containing the high price and 0
@@ -134,28 +106,7 @@ class ADX:
         dma[0][dma["atr"] > 0] = divs
         dma_array = np.append(fill, dma[0][1:])
 
-
         self.data["pdma"] = dma_array * 100
-
-        """
-        dma = np.append(fill, dma[1:])
-        print(dma)
-
-        atr = self.data["atr"].to_numpy().reshape(size, )
-        fill = np.zeros((atr.shape[0] - dma.shape[0], 1, 1))
-        # Divide the sum of past period's dm by avg true range
-        filled = np.append(fill, dma)
-        #print("dma: ", dma[:20])
-        #print(len(dma))
-        #print("filled: ", filled[:20])
-        nand = np.nan_to_num(filled, nan=1)
-        #print("nand: ", nand[:20])
-        pdma = np.divide(nand, atr)
-
-        #print(filled[:20])
-        #print(pdma[:20])
-        self.data["pdma"] = np.nan_to_num(np.divide(np.append(fill, dma), atr))# * 100
-        """
 
     def _adx_neg(self):
         size = len(self.data)
@@ -179,22 +130,75 @@ class ADX:
         dma_array = np.append(fill, dma[0][1:])
 
         self.data["ndma"] = dma_array * 100
-        """
-        size = len(self.data)
-        dm = np.zeros((size, 2))
-        dm[:, 1] = self.data["l"].to_numpy().reshape((size,))
-        dm = np.max(np.diff(self.rolling(dm, 2), axis=0), axis=2)
-        dma = np.sum(np.lib.stride_tricks.sliding_window_view(dm, (self.period, 1)), axis=2)
-        atr = self.data["atr"].to_numpy().reshape(size, )
-        fill = np.zeros((atr.shape[0] - dma.shape[0], 1, 1))
-        self.data["ndma"] = np.nan_to_num(np.divide(np.append(fill, dma), atr))# * 100
-        """
 
+
+class SuperTrend:
+
+    def __init__(self, init_data: DataFrame = None, period: int = 9, multiplier: float = 3) -> None:
+        self.data = init_data
+        self.period = period
+        self.mult = multiplier
+        self._run()
+
+    def _run(self):
+        self._atr()
+        self._bands()
+
+    def update_data(self, data: DataFrame) -> None:
+        self.data = data
+
+    def _atr(self):
+        def true_range(a): return max([a["h"] - a["l"], abs(a["h"] - a["c"]), abs(a["l"] - a["c"])])
+        #self.data["tr"] = self.data.apply(true_range, axis=1)
+        self.data = self.data.assign(tr=self.data.apply(true_range, axis=1))
+        #self.data[:, "atr"] = self.data["tr"].rolling(self.period).apply(lambda a: (1 / self.period) * a.sum())
+        self.data = self.data.assign(atr=self.data["tr"]
+                                             .rolling(self.period)
+                                             .apply(lambda a: (1 / self.period) * a.sum()))
+
+    def _bands(self):
+        def u_band(a): return (a["h"] + a["l"]) / 2 + (self.mult * a["atr"])
+        def l_band(a): return (a["h"] + a["l"]) / 2 - (self.mult * a["atr"])
+        self.data["uband"] = self.data.apply(u_band, axis=1)
+        self.data["lband"] = self.data.apply(l_band, axis=1)
+        self.data["fuband"] = self.data["uband"]
+        self.data["flband"] = self.data["lband"]
+        self.data["trend"] = True
+        #print(self.data[["c", "atr", "uband", "lband", "fuband", "trend"]])
+        for i, frame in self.data[1:].iterrows():
+            p = i - 1
+            c = i
+            # current close > previous upper band
+            if self.data.loc[c]["c"] > self.data.loc[p]["uband"]:
+                self.data.at[c, "trend"] = True
+            # current close < previous lower band
+            elif self.data.loc[c]["c"] < self.data.loc[p]["lband"]:
+                self.data.at[c, "trend"] = False
+            # previous upper band > current close > previous lower band
+            else:
+                self.data.at[c, "trend"] = self.data.loc[p]["trend"]
+                # current price above previous lower band AND current lower band < previous lower band
+                if self.data.loc[c]["trend"] and self.data.loc[c]["lband"] < self.data.loc[p]["lband"]:
+                    self.data.at[c, "flband"] = self.data.loc[p]["lband"]
+                # current price below previous lower band AND current upper band > previous upper
+                if not self.data.loc[c]["trend"] and self.data.loc[c]["uband"] > self.data.loc[p]["uband"]:
+                    self.data.at[c, "fuband"] = self.data.loc[p]["uband"]
+
+            if self.data.loc[c]["c"] <= self.data.loc[p]["flband"]:
+                self.data.at[c, "supertrend"] = self.data.loc[c]["fuband"]
+            else:
+                self.data.at[c, "supertrend"] = self.data.loc[c]["flband"]
+
+
+
+
+
+    def bands(self):
+        return self.data[["t", "uband", "lband"]]
 
 
 if __name__ == "__main__":
     df = read_csv("csvs/ETHUSDT_3day_history.csv").drop("Unnamed: 0", axis=1)[:500]
-    adx = ADX(df, period=5)
-    print(adx.adx())
-    #print(df)
+    st = SuperTrend(init_data=df[:50])
+    print(st.bands())
 

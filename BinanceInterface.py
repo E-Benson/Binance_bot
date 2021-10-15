@@ -12,9 +12,9 @@ client = Client("ljQ8hdKoko74G3jmKcRZvK9OmDC07BNpcbelSIZNGKWx2z4pC80yTWlf9syCsxC
                 tld="us")
 
 #depth = client.get_order_book(symbol="ETHUSDT")
-candle_labels = ["open_time", "open", "close", "high", "low",
-                     "volume", "close_time", "q_volume", "num_trades",
-                     "taker_base_vol", "taker_quote_vol", "x"]
+candle_labels = ["T", "o", "h", "l", "c",
+                     "b", "t", "Q", "n",
+                     "v", "V", "x"]
 #pprint(depth)
 
 def get_historical_data(symbol: str, candle_size="1m", time_frame="1 day") -> DataFrame:
@@ -128,50 +128,9 @@ def cancel_order(symbol: str, order_id: str) -> dict:
     )
     return res
 
-if __name__ == "__main__":
-    #client.cancel_order(symbol="")
-    b,a = get_bidask("ETHUSD")
 
+if __name__ == "__main__":
     tok = "eth"
     symbol = f"{tok}usdt"
-
-    #ask_price = a["price"]
-    print(f"Highest bid: ${b['price']}")
-    print(f"Lowest ask: ${a['price']}")
-    price = get_asset_price(symbol)
-    print(f"Current price: ${price}")
-    print(f"Average price: {(b['price'] + a['price']) / 2}")
-    wallet_balance = get_asset_balance(tok)
-    print(f"ETH balance: {wallet_balance} (${wallet_balance * price})")
-    wallet_balance = get_asset_balance("USDT")
-    print(f"USD balance: ${wallet_balance}")
-    bid, ask = get_bidask(symbol)
-    print(bid, ask)
-    buy_quantity = 21 / a["price"]
-    print(f"Buy quantity: {buy_quantity}")
-    print(f"Buy value: {buy_quantity * a['price']}")
-    #place_buy_order("ETHUSD", buy_quantity, a["price"])
-    #place_sell_order('ethusdt', 0.02612198, 3029.045)
-
-    #order = place_buy_order('ETHUSDT', buy_quantity, "2500.00")
-    #print(order)
-
-    token = "eth"
-    sym = f"{token}usdt"
-    ords = get_open_orders(sym.upper())
-    print(ords)
-
-    #for ord in ords:
-        #res = cancel_order("ETHUSD", ord["clientOrderId"])
-        #print(res)
-
-
-
-
-    #c = client.get_account()
-    #pprint(client.get_account())
-    #klines = client.get_historical_klines("ETHUSDT", "1m", "5 days ago UTC")
-    #klines = client.get_historical_klines("ETHUSDT", "1m", "1 week ago UTC")
-    #candles = get_historical_data("ETHUSDT")
-    #print(candles)
-    #print(klines)
+    his = get_historical_data("ETHUSDT", candle_size="1d", time_frame="1 month")
+    print(his[["o", "h", "l", "c"]])

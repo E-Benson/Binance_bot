@@ -7,7 +7,7 @@ import pandas as pd
 
 api_key = credentials["api_key"]
 api_secret = credentials["api_secret"]
-token = "SHIB"
+token = "ADA"
 symbol = f"{token}USDT"
 trades_csv_path = f"csvs/{token}_trades.csv"
 
@@ -106,7 +106,7 @@ def main():
             else:
                 print("\t> Current position: amount: {:.6f}, buy price: ${:.7f}".format(env["position"].quantity,
                                                                                         env["position"].buy_price))
-                print("\t\t> Current prices: close: {:.6f}, high: {:.6f}, low: {:.6f}")
+                print("\t\t> Current prices: close: {:.6f}, high: {:.6f}, low: {:.6f}".format())
             #print(env["strategies"][candle_interval].data[["c", "h", "l", "pdma", "ndma", "adx"]][-2:])
         print()
 
